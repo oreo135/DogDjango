@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Профиль пользователя</title>
+</head>
+<body>
+    <h1>Профиль пользователя: {{ user.username }}</h1>
+    <p>Email: {{ user.email }}</p>
+    <p>Возраст: {{ user.age }}</p>
+    <p>Дата рождения: {{ user.birth_date }}</p>
+    <p>Биография: {{ user.bio }}</p>
+
+    {% if user.avatar %}
+        <img src="{{ user.avatar.url }}" alt="Аватар пользователя" style="max-width: 200px;">
+    {% else %}
+        <p>Аватар отсутствует.</p>
+    {% endif %}
+
+    <ul>
+        <!-- Ссылка на редактирование профиля -->
+        <li><a href="{% url 'update_profile' user.username %}">Редактировать профиль</a></li>
+        <!-- Кнопка для выхода из аккаунта -->
+        <li>
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit">Выйти из аккаунта</button>
+            </form>
+        </li>
+    </ul>
+</body>
+</html>

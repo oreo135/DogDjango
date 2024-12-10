@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Удалить собаку</title>
+</head>
+<body>
+    <h1>Вы уверены, что хотите удалить собаку {{ dog.name }}?</h1>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit">Да, удалить</button>
+    </form>
+    <a href="{% url 'dogs:list_dogs' %}">Отмена</a>
+</body>
+</html>

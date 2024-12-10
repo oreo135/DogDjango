@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Информация о собаке</title>
+</head>
+<body>
+    <h1>{{ dog.name }}</h1>
+    <p>Порода: {{ dog.breed.name }}</p>
+    <p>Возраст: {{ dog.age }}</p>
+    {% if dog.image %}
+        <img src="{{ dog.image.url }}" alt="Фото собаки">
+    {% endif %}
+    <a href="{% url 'dogs:update_dog' dog.pk %}">Редактировать</a>
+    <a href="{% url 'dogs:delete_dog' dog.pk %}">Удалить</a>
+</body>
+</html>

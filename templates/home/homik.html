@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Перенаправление на Вход</title>
+</head>
+<body>
+    <h1>Добро пожаловать!</h1>
+    <p>Для входа в систему нажмите на кнопку ниже:</p>
+    <form action="{% url 'login' %}" method="get">
+        <button type="submit">Перейти к странице входа</button>
+    </form>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Редактирование профиля</title>
+</head>
+<body>
+    <h1>Редактирование профиля</h1>
+
+    <!-- Форма для редактирования профиля -->
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <!-- Вывод ошибок для формы редактирования профиля -->
+        {% if form.errors %}
+            <ul>
+                {% for field, errors in form.errors.items %}
+                    <li>{{ field }}: {{ errors|join:", " }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        {{ form.as_p }}
+        <button type="submit">Сохранить изменения</button>
+    </form>
+
+    <hr>
+
+    <h2>Управление паролем</h2>
+
+    <!-- Форма для изменения пароля вручную -->
+    <h3>Изменить пароль</h3>
+    <form method="post" action="{% url 'manage_password' user.username %}">
+        {% csrf_token %}
+
+        <!-- Вывод ошибок для изменения пароля -->
+        {% if messages %}
+            <ul>
+                {% for message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        <label for="new_password">Введите новый пароль:</label>
+        <input type="password" name="new_password" id="new_password">
+
+        <label for="confirm_password">Повторите новый пароль:</label>
+        <input type="password" name="confirm_password" id="confirm_password">
+
+        <button type="submit" name="action" value="manual">Сохранить новый пароль</button>
+    </form>
+
+    <!-- Форма для сброса пароля -->
+    <h3>Сбросить пароль</h3>
+    <form method="post" action="{% url 'manage_password' user.username %}">
+        {% csrf_token %}
+        <button type="submit" name="action" value="generate">Сгенерировать случайный пароль</button>
+    </form>
+
+    <hr>
+
+    <!-- Выход из аккаунта -->
+    <h3>Выход</h3>
+    <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit">Выйти из аккаунта</button>
+    </form>
+</body>
+</html>

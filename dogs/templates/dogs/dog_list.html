@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Список собак</title>
+    <!-- Подключение CSS -->
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/album.css' %}">
+</head>
+<body>
+    <h1>Список всех собак</h1>
+    <a href="{% url 'dogs:create_dog' %}">Добавить новую собаку</a>
+    <ul>
+        {% for dog in dogs %}
+            <li>
+                <a href="{% url 'dogs:dog_detail' dog.pk %}">{{ dog.name }}</a> ({{ dog.breed.name }})
+            </li>
+        {% endfor %}
+    </ul>
+
+    <!-- Подключение JS -->
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+</body>
+</html>
