@@ -10,7 +10,26 @@
     {% if dog.image %}
         <img src="{{ dog.image.url }}" alt="Фото собаки">
     {% endif %}
+
+    <h2>Родословная</h2>
+    {% if pedigree.exists %}
+        <ul>
+            {% for entry in pedigree %}
+                <li>
+                    Имя предка: {{ entry.ancestor_name }} <br>
+                    Степень родства: {{ entry.relationship }} <br>
+                    Год рождения: {{ entry.birth_year }}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Нет данных о родословной.</p>
+    {% endif %}
+
     <a href="{% url 'dogs:update_dog' dog.pk %}">Редактировать</a>
-    <a href="{% url 'dogs:delete_dog' dog.pk %}">Удалить</a>
+    <form action="{% url 'dogs:delete_dog' dog.pk %}" method="get" style="display: inline;">
+        {% csrf_token %}
+        <button type="submit">Удалить</button>
+    </form>
 </body>
 </html>

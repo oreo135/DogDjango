@@ -8,13 +8,13 @@
 </head>
 <body>
     <div class="container">
-        <h1 class="mt-4">{{ form.instance.pk|yesno:"Редактировать собаку,Добавить новую собаку" }}</h1>
+        <h1 class="mt-4 text-center">{{ form.instance.pk|yesno:"Редактировать собаку,Добавить новую собаку" }}</h1>
 
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
 
             <!-- Основная форма -->
-            <fieldset>
+            <fieldset class="mb-4">
                 <legend>Информация о собаке</legend>
                 {{ form.as_p }}
             </fieldset>
@@ -24,16 +24,19 @@
                 <legend>Родословная</legend>
                 {{ pedigree_formset.management_form }}
                 {% for form in pedigree_formset %}
-                    <div class="border p-3 mb-2">
+                    <div class="border rounded p-3 mb-2">
                         {{ form.as_p }}
                         {% if forloop.last %}
-                            <button type="button" class="btn btn-danger" onclick="this.closest('.border').remove();">Удалить</button>
+                            <button type="button" class="btn btn-danger mt-2" onclick="this.closest('.border').remove();">Удалить</button>
                         {% endif %}
                     </div>
                 {% endfor %}
             </fieldset>
 
-            <button type="submit" class="btn btn-primary mt-3">Сохранить</button>
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">Сохранить</button>
+                <a href="{% url 'dogs:list_dogs' %}" class="btn btn-secondary">Отмена</a>
+            </div>
         </form>
     </div>
 

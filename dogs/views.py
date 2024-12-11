@@ -1,8 +1,8 @@
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.contrib import messages
-from .models import Dog
-from .forms import DogForm, PedigreeFormSet
+from .models import Dog, Pedigree
+from .forms import DogForm, get_pedigree_formset
 from django.core.cache import cache
 from django.http import HttpResponse
 from .utils import send_pet_creation_email
@@ -23,6 +23,14 @@ class DogDetailView(DetailView):
     template_name = 'dogs/dog_detail.html'
     context_object_name = 'dog'
 
+    def get_context_data(self, **kwargs):
+        """
+        Добавляем информацию о родословной в контекст.
+        """
+        context = super().get_context_data(**kwargs)
+        context['pedigree'] = Pedigree.objects.filter(pet=self.object)  # Связанная родословная
+        return context
+
 class DogCreateView(CreateView):
     """
     Создание новой собаки.
@@ -37,6 +45,7 @@ class DogCreateView(CreateView):
         Добавляем в контекст форму для редактирования родословной (PedigreeFormSet).
         """
         context = super().get_context_data(**kwargs)
+        PedigreeFormSet = get_pedigree_formset()
         if self.request.POST:
             context['pedigree_formset'] = PedigreeFormSet(self.request.POST, instance=self.object)
         else:
@@ -81,6 +90,37 @@ class DogUpdateView(UpdateView):
     form_class = DogForm
     template_name = 'dogs/dog_form.html'
     success_url = reverse_lazy('dogs:list_dogs')
+
+    def get_context_data(self, **kwargs):
+        """
+        Добавляем родословную в контекст.
+        """
+        context = super().get_context_data(**kwargs)
+        PedigreeFormSet = get_pedigree_formset(instance=self.object)
+        print('pered ifom')
+        if self.request.POST:
+            print('rabotaet')
+            context['pedigree_formset'] = PedigreeFormSet(self.request.POST, instance=self.object)
+        else:
+            print('ne rabotaet')
+            context['pedigree_formset'] = PedigreeFormSet(instance=self.object)
+        return context
+
+    def form_valid(self, form):
+        """
+        Обрабатываем форму Dog и родословную.
+        """
+        context = self.get_context_data()
+        pedigree_formset = context['pedigree_formset']
+        if pedigree_formset.is_valid():
+            self.object = form.save()
+            pedigree_formset.instance = self.object
+            pedigree_formset.save()
+            messages.success(self.request, 'Собака успешно обновлена.')
+            return super().form_valid(form)
+        else:
+            messages.error(self.request, 'Исправьте ошибки в родословной.')
+            return self.form_invalid(form)
 
     def form_invalid(self, form):
         """

@@ -84,10 +84,11 @@ class DogForm(forms.ModelForm):
         # Добавьте здесь дополнительные проверки, если нужно.
         return cleaned_data
 
-PedigreeFormSet = inlineformset_factory(
-    Dog,  # Основная модель
-    Pedigree,  # Связанная модель
-    fields=('ancestor_name', 'relationship', 'birth_year'),
-    extra=1,  # Количество пустых форм для добавления
-    can_delete=True  # Возможность удаления
-)
+def get_pedigree_formset(instance=None):
+    return inlineformset_factory(
+        Dog,  # Основная модель
+        Pedigree,  # Связанная модель
+        fields=('ancestor_name', 'relationship', 'birth_year'),
+        extra=1 if instance is None else 0,  # Количество пустых форм для добавления
+        can_delete=True  # Возможность удаления
+    )
