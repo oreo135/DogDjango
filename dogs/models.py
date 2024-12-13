@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.core.mail import send_mail
 
 class Breed(models.Model):
     """
@@ -77,6 +78,20 @@ class Dog(models.Model):
         verbose_name="Владелец",
         null = True
     )
+    views = models.PositiveIntegerField(default=0)
+
+    def send_notification_if_needed(self):
+        """
+        Отправляет уведомление владельцу, если просмотры кратны 100.
+        """
+        if self.owner and int(self.views or 0) % 100 == 0:
+            send_mail(
+                subject='Достижение 100 просмотров!',
+                message=f'Ваш питомец {self.name} достиг {self.views} просмотров.',
+                from_email='from@example.com',
+                recipient_list=[self.owner.email],
+                fail_silently=False,
+            )
 
     def __str__(self):
         """
