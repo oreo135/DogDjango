@@ -28,7 +28,7 @@ class CustomLoginView(LoginView):
         user = form.get_user()
         login(self.request, user)
         messages.success(self.request, f'Добро пожаловать, {user.username}!')
-        return redirect('user_profile', username=user.username)
+        return redirect('users:user_profile', username=user.username)
 
     def form_invalid(self, form):
         """
@@ -55,6 +55,14 @@ class UserProfileView(LoginRequiredMixin, DetailView):
             return get_object_or_404(CustomUser, username=self.request.user.username)
         return get_object_or_404(CustomUser, username=username)
 
+    def get_context_data(self, **kwargs):
+        """
+        Добавляем в контекст флаг, чтобы различать свой профиль и чужой.
+        """
+        context = super().get_context_data(**kwargs)
+        context['is_own_profile'] = self.object == self.request.user
+        return context
+
 
 class RegisterView(CreateView):
     """
@@ -65,7 +73,7 @@ class RegisterView(CreateView):
     template_name = 'users/user_register.html'
 
     def get_success_url(self):
-        return reverse_lazy('user_profile', kwargs={'username': self.object.username})
+        return reverse_lazy('users:user_profile', kwargs={'username': self.object.username})
 
 
     def form_valid(self, form):
@@ -129,6 +137,9 @@ class UpdateProfileView(LoginRequiredMixin, UpdateView):
         messages.error(self.request, 'Исправьте ошибки в форме.')
         return super().form_invalid(form)
 
+    def get_success_url(self):
+        return reverse_lazy('users:user_profile', kwargs={'username': self.object.username})
+
 
 class ManagePasswordView(LoginRequiredMixin, TemplateView):
     """
@@ -151,7 +162,7 @@ class ManagePasswordView(LoginRequiredMixin, TemplateView):
                 request.user.save()
                 update_session_auth_hash(request, request.user)
                 messages.success(request, 'Ваш пароль успешно изменён.')
-                return redirect('user_profile', username=request.user.username)
+                return redirect('users:user_profile', username=request.user.username)
         elif action == 'generate':
             new_password = generate_random_password()
             request.user.set_password(new_password)
@@ -166,7 +177,7 @@ class ManagePasswordView(LoginRequiredMixin, TemplateView):
                 fail_silently=False,
             )
             messages.success(request, 'Ваш пароль был сброшен. Новый пароль отправлен на вашу почту.')
-            return redirect('user_profile', username=request.user.username)
+            return redirect('users:user_profile', username=request.user.username)
         return super().get(request, *args, **kwargs)
 
 
@@ -174,7 +185,7 @@ class CustomLogoutView(LogoutView):
     """
     Класс представления для выхода из аккаунта.
     """
-    next_page = reverse_lazy('login')  # Перенаправление после выхода
+    next_page = reverse_lazy('users:login')  # Перенаправление после выхода
 
     def dispatch(self, request, *args, **kwargs):
         """
