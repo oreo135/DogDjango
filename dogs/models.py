@@ -50,6 +50,9 @@ class Dog(models.Model):
         age (PositiveIntegerField): Возраст собаки.
         breed (ForeignKey): Связь с моделью Breed, указывает породу собаки.
         image (ImageField): Фото собаки. Может быть пустым.
+        owner (ForeignKey): Владелец собаки.
+        views (PositiveIntegerField): Счетчик просмотров.
+        is_active (BooleanField): Активность собаки.
     """
 
     name = models.CharField(
@@ -76,9 +79,17 @@ class Dog(models.Model):
         on_delete=models.CASCADE,
         related_name='owned_dogs',
         verbose_name="Владелец",
-        null = True
+        null=True,
+        blank = True
     )
-    views = models.PositiveIntegerField(default=0)
+    views = models.PositiveIntegerField(default=0, blank=True)
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Активность"
+    )
+
+    def __str__(self):
+        return self.name
 
     def send_notification_if_needed(self):
         """

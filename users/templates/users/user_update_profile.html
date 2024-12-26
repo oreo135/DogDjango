@@ -2,68 +2,78 @@
 <html>
 <head>
     <title>Редактирование профиля</title>
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'css/bootstrap.min.css' %}">
 </head>
 <body>
-    <h1>Редактирование профиля</h1>
+    <div class="container mt-4">
+        <h1 class="mb-4">Редактирование профиля</h1>
 
-    <!-- Форма для редактирования профиля -->
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
+        <!-- Форма для редактирования профиля -->
+        <form method="post" enctype="multipart/form-data" class="p-4 border rounded bg-light shadow-sm">
+            {% csrf_token %}
 
-        <!-- Вывод ошибок для формы редактирования профиля -->
-        {% if form.errors %}
-            <ul>
-                {% for field, errors in form.errors.items %}
-                    <li>{{ field }}: {{ errors|join:", " }}</li>
-                {% endfor %}
-            </ul>
-        {% endif %}
+            <!-- Вывод ошибок для формы редактирования профиля -->
+            {% if form.errors %}
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        {% for field, errors in form.errors.items %}
+                            <li><strong>{{ field }}</strong>: {{ errors|join:", " }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
 
-        {{ form.as_p }}
-        <button type="submit">Сохранить изменения</button>
-    </form>
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+        </form>
 
-    <hr>
+        <hr class="my-4">
 
-    <h2>Управление паролем</h2>
+        <h2 class="mb-3">Управление паролем</h2>
 
-    <!-- Форма для изменения пароля вручную -->
-    <h3>Изменить пароль</h3>
-    <form method="post" action="{% url 'manage_password' user.username %}">
-        {% csrf_token %}
-
-        <!-- Вывод ошибок для изменения пароля -->
+        <!-- Вывод уведомлений (сообщений) -->
         {% if messages %}
-            <ul>
-                {% for message in messages %}
-                    <li>{{ message }}</li>
-                {% endfor %}
-            </ul>
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} mt-3">
+                    {{ message }}
+                </div>
+            {% endfor %}
         {% endif %}
 
-        <label for="new_password">Введите новый пароль:</label>
-        <input type="password" name="new_password" id="new_password">
+        <!-- Форма для изменения пароля -->
+        <h3>Изменить пароль</h3>
+        <form method="post" action="{% url 'users:manage_password' user.username %}" class="mb-3">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="new_password" class="form-label">Введите новый пароль:</label>
+                <input type="password" name="new_password" id="new_password" class="form-control">
+            </div>
+            <div class="mb-3">
+                <label for="confirm_password" class="form-label">Повторите новый пароль:</label>
+                <input type="password" name="confirm_password" id="confirm_password" class="form-control">
+            </div>
+            <button type="submit" name="action" value="manual" class="btn btn-success">Сохранить новый пароль</button>
+        </form>
 
-        <label for="confirm_password">Повторите новый пароль:</label>
-        <input type="password" name="confirm_password" id="confirm_password">
+        <!-- Форма для сброса пароля -->
+        <h3>Сбросить пароль</h3>
+        <form method="post" action="{% url 'users:manage_password' user.username %}" class="mb-3">
+            {% csrf_token %}
+            <button type="submit" name="action" value="generate" class="btn btn-warning">Сгенерировать случайный пароль</button>
+        </form>
 
-        <button type="submit" name="action" value="manual">Сохранить новый пароль</button>
-    </form>
+        <hr class="my-4">
 
-    <!-- Форма для сброса пароля -->
-    <h3>Сбросить пароль</h3>
-    <form method="post" action="{% url 'manage_password' user.username %}">
-        {% csrf_token %}
-        <button type="submit" name="action" value="generate">Сгенерировать случайный пароль</button>
-    </form>
+        <!-- Выход из аккаунта -->
+        <h3>Выход</h3>
+        <form method="post" action="{% url 'users:logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Выйти из аккаунта</button>
+        </form>
+    </div>
 
-    <hr>
-
-    <!-- Выход из аккаунта -->
-    <h3>Выход</h3>
-    <form method="post" action="{% url 'logout' %}">
-        {% csrf_token %}
-        <button type="submit">Выйти из аккаунта</button>
-    </form>
+    <!-- Подключение JS -->
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
 </body>
 </html>

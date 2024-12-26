@@ -23,6 +23,6 @@ from .views import home_view
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', home_view, name='home'),  # Главная страница
-    path('dogs/', include('dogs.urls')),
-    path('users/', include('users.urls')),
+    path('dogs/', include('dogs.urls', namespace='dogs')),  # Добавляем namespace для dogs
+    path('users/', include('users.urls', namespace='users')),  # Добавляем namespace для users
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,11 +1,15 @@
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.contrib import messages
+from django.db.models import F
 from .models import Dog, Pedigree
 from .forms import DogForm, get_pedigree_formset
 from django.core.cache import cache
 from django.http import HttpResponse
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import never_cache
 from .utils import send_pet_creation_email
+
 
 class DogListView(ListView):
     """
@@ -22,6 +26,27 @@ class DogDetailView(DetailView):
     model = Dog
     template_name = 'dogs/dog_detail.html'
     context_object_name = 'dog'
+
+    @method_decorator(never_cache)
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+
+        # Отладка: выводим владельца и текущего пользователя
+        print(f"Owner of the dog: {self.object.owner}")
+        print(f"Current user: {request.user}")
+        print(f"Is authenticated: {request.user.is_authenticated}")
+
+        # Увеличиваем счётчик просмотров, если текущий пользователь не владелец
+        if (not request.user.is_authenticated or self.object.owner != request.user):
+            Dog.objects.filter(pk=self.object.pk).update(views=F('views') + 1)
+            # Проверяем кратность просмотров сразу в БД
+            updated_dog = Dog.objects.get(pk=self.object.pk)
+            if updated_dog.views % 100 == 0:
+                updated_dog.send_notification_if_needed()
+        else:
+           print("No changes to views counter.")
+
+        return super().get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         """
@@ -40,6 +65,17 @@ class DogCreateView(CreateView):
     template_name = 'dogs/dog_form.html'
     success_url = reverse_lazy('dogs:list_dogs')
 
+    def get_form(self, form_class=None):
+        """
+        Убираем ненужные поля при создании.
+        """
+        form = super().get_form(form_class)
+        # Убираем поля 'is_active', 'owner', 'views' при создании
+        for field in ['is_active', 'owner', 'views']:
+            if field in form.fields:
+                del form.fields[field]
+        return form
+
     def get_context_data(self, **kwargs):
         """
         Добавляем в контекст форму для редактирования родословной (PedigreeFormSet).
@@ -50,28 +86,35 @@ class DogCreateView(CreateView):
             context['pedigree_formset'] = PedigreeFormSet(self.request.POST, instance=self.object)
         else:
             context['pedigree_formset'] = PedigreeFormSet(instance=self.object)
+        context['is_update'] = False
+        context['user'] = self.request.user
         return context
 
     def form_valid(self, form):
         """
-        Обрабатываем форму Dog и PedigreeFormSet, если обе формы валидны.
+        Устанавливаем дополнительные поля при создании собаки.
         """
-        # Сохраняем объект Dog
+        print("Форма основная валидна")
+        # Автоматически устанавливаем владельца и значения по умолчанию
+        form.instance.owner = self.request.user
+        form.instance.is_active = True  # По умолчанию собака активна
+        form.instance.views = 0  # Начальное количество просмотров
+
+        # Сохраняем собаку
         self.object = form.save()
-        # Получаем форму PedigreeFormSet из контекста
+
+        # Обрабатываем родословную
         context = self.get_context_data()
         pedigree_formset = context['pedigree_formset']
 
         if pedigree_formset.is_valid():
-            # Устанавливаем связь Pedigree с текущим Dog
+            print("Форма родословной валидна")
             pedigree_formset.instance = self.object
-            # Сохраняем родословную
             pedigree_formset.save()
-            # Отправляем письмо о создании питомца
             send_pet_creation_email(self.request.user, self.object.name)
             return super().form_valid(form)
         else:
-            # Если родословная не валидна, возвращаем ошибку
+            print("Форма родословной не валидна:", pedigree_formset.errors)
             return self.form_invalid(form)
 
     def form_invalid(self, form):
@@ -91,27 +134,49 @@ class DogUpdateView(UpdateView):
     template_name = 'dogs/dog_form.html'
     success_url = reverse_lazy('dogs:list_dogs')
 
+
+    def get_form(self, form_class=None):
+        """
+        Ограничиваем отображаемые и редактируемые поля в зависимости от роли пользователя.
+        """
+        form = super().get_form(form_class)
+        user = self.request.user
+
+        if user.role not in ['admin', 'moderator']:
+            # Убираем поля для обычных пользователей
+            for field in ['is_active', 'owner', 'views']:
+                if field in form.fields:
+                    del form.fields[field]
+        else:
+            # Делаем поля только для чтения для админов и модераторов
+            for field in ['is_active', 'owner', 'views']:
+                if field in form.fields:
+                    form.fields[field].widget.attrs['disabled'] = True
+        return form
+
     def get_context_data(self, **kwargs):
         """
         Добавляем родословную в контекст.
         """
         context = super().get_context_data(**kwargs)
         PedigreeFormSet = get_pedigree_formset(instance=self.object)
-        print('pered ifom')
         if self.request.POST:
-            print('rabotaet')
             context['pedigree_formset'] = PedigreeFormSet(self.request.POST, instance=self.object)
         else:
-            print('ne rabotaet')
             context['pedigree_formset'] = PedigreeFormSet(instance=self.object)
+        context['is_update'] = True
+        context['user'] = self.request.user
         return context
 
     def form_valid(self, form):
         """
         Обрабатываем форму Dog и родословную.
         """
+        print("Форма валидна и данные сохранены.")
+
         context = self.get_context_data()
         pedigree_formset = context['pedigree_formset']
+
         if pedigree_formset.is_valid():
             self.object = form.save()
             pedigree_formset.instance = self.object
@@ -126,6 +191,7 @@ class DogUpdateView(UpdateView):
         """
         Обрабатываем ошибки формы.
         """
+        print("Форма невалидна. Ошибки:", form.errors)
         messages.error(self.request, 'Исправьте ошибки в форме.')
         return super().form_invalid(form)
 

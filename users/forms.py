@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
-from .models import CustomUser
+from .models import CustomUser, Review
 from django.utils.translation import gettext_lazy as _
 
 class RegisterForm(UserCreationForm):
@@ -79,4 +79,13 @@ class UpdateProfileForm(forms.ModelForm):
             'email': {
                 'invalid': _("Введите действительный адрес электронной почты."),
             },
+        }
+
+class ReviewForm(forms.ModelForm):
+    class Meta:
+        model = Review
+        fields = ['text', 'rating']
+        labels = {
+            'text': 'Текст отзыва',
+            'rating': 'Рейтинг',
         }

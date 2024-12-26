@@ -2,34 +2,54 @@
 <html>
 <head>
     <title>Информация о собаке</title>
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'css/bootstrap.min.css' %}">
 </head>
 <body>
-    <h1>{{ dog.name }}</h1>
-    <p>Порода: {{ dog.breed.name }}</p>
-    <p>Возраст: {{ dog.age }}</p>
-    {% if dog.image %}
-        <img src="{{ dog.image.url }}" alt="Фото собаки">
-    {% endif %}
+    <div class="container mt-4">
+        <h1 class="text-center mb-4">{{ dog.name }}</h1>
 
-    <h2>Родословная</h2>
-    {% if pedigree.exists %}
-        <ul>
-            {% for entry in pedigree %}
-                <li>
-                    Имя предка: {{ entry.ancestor_name }} <br>
-                    Степень родства: {{ entry.relationship }} <br>
-                    Год рождения: {{ entry.birth_year }}
-                </li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>Нет данных о родословной.</p>
-    {% endif %}
+        <div class="row">
+            <!-- Информация о собаке -->
+            <div class="col-md-6">
+                <h2>Информация</h2>
+                <p><strong>Порода:</strong> {{ dog.breed.name }}</p>
+                <p><strong>Возраст:</strong> {{ dog.age }}</p>
+                {% if dog.image %}
+                    <img src="{{ dog.image.url }}" alt="Фото собаки" class="img-fluid rounded shadow">
+                {% endif %}
+            </div>
 
-    <a href="{% url 'dogs:update_dog' dog.pk %}">Редактировать</a>
-    <form action="{% url 'dogs:delete_dog' dog.pk %}" method="get" style="display: inline;">
-        {% csrf_token %}
-        <button type="submit">Удалить</button>
-    </form>
+            <!-- Родословная -->
+            <div class="col-md-6">
+                <h2>Родословная</h2>
+                {% if pedigree.exists %}
+                    <ul class="list-group">
+                        {% for entry in pedigree %}
+                            <li class="list-group-item">
+                                <strong>Имя предка:</strong> {{ entry.ancestor_name }}<br>
+                                <strong>Степень родства:</strong> {{ entry.relationship }}<br>
+                                <strong>Год рождения:</strong> {{ entry.birth_year }}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-muted">Нет данных о родословной.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Действия -->
+        <div class="mt-4 text-center">
+            <a href="{% url 'dogs:update_dog' dog.pk %}" class="btn btn-warning me-2">Редактировать</a>
+            <form action="{% url 'dogs:delete_dog' dog.pk %}" method="post" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Удалить</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Подключение JS -->
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
 </body>
 </html>

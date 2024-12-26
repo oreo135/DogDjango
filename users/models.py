@@ -1,5 +1,7 @@
 from django.contrib.auth.models import AbstractUser
+from django.contrib.auth import get_user_model
 from django.db import models
+from django.urls import reverse
 
 
 class CustomUser(AbstractUser):
@@ -56,3 +58,22 @@ class CustomUser(AbstractUser):
         Проверка, является ли пользователь обычным пользователем.
         """
         return self.role == 'user'
+
+    def get_absolute_url(self):
+        """
+        Возвращает URL страницы профиля пользователя.
+        """
+        return reverse('users:user_profile', kwargs={'username': self.username})
+
+class Review(models.Model):
+    """
+    Модель для отзывов.
+    """
+    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='reviews')
+    author = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='review_author')
+    text = models.TextField(verbose_name='Текст отзыва')
+    rating = models.PositiveIntegerField(verbose_name='Рейтинг', default=5)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Отзыв от {self.author.username} для {self.user.username}"

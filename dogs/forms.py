@@ -2,6 +2,7 @@ from django import forms
 from django.forms import inlineformset_factory
 from .models import Dog, Pedigree
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import UploadedFile
 from django.utils.translation import gettext_lazy as _
 
 
@@ -14,12 +15,15 @@ class DogForm(forms.ModelForm):
 
     class Meta:
         model = Dog
-        fields = ['name', 'breed', 'age', 'image']
+        fields = ['name', 'breed', 'age', 'image', 'is_active', 'owner', 'views']  # Добавили недостающие поля
         labels = {
             'name': _('Имя собаки'),
             'breed': _('Порода'),
             'age': _('Возраст'),
             'image': _('Фото'),
+            'is_active': _('Активность'),
+            'owner': _('Владелец'),
+            'views': _('Просмотры'),
         }
         help_texts = {
             'name': _('Введите имя вашей собаки.'),
@@ -70,10 +74,11 @@ class DogForm(forms.ModelForm):
         """
         image = self.cleaned_data.get('image')
         if image:
-            if image.size > 5 * 1024 * 1024:  # Лимит на размер файла (5 MB)
-                raise ValidationError(_('Размер изображения не должен превышать 5MB.'))
-            if not image.content_type.startswith('image'):
-                raise ValidationError(_('Загруженный файл должен быть изображением.'))
+            if isinstance(image, UploadedFile):  # Проверяем, что это новый загружаемый файл
+                if image.size > 5 * 1024 * 1024:  # Лимит на размер файла (5 MB)
+                    raise ValidationError(_('Размер изображения не должен превышать 5MB.'))
+                if not image.content_type.startswith('image'):
+                    raise ValidationError(_('Загруженный файл должен быть изображением.'))
         return image
 
     def clean(self):

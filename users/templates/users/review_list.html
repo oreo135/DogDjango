@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block title %}Отзывы пользователя{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">Отзывы для {{ user.username }}</h1>
+    <ul class="list-group">
+        {% for review in reviews %}
+            <li class="list-group-item">
+                <p><strong>{{ review.author.username }}</strong>: {{ review.text }}</p>
+                <p>Рейтинг: {{ review.rating }}</p>
+                <p>Дата: {{ review.created_at }}</p>
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

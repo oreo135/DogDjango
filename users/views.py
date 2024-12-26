@@ -1,18 +1,18 @@
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.contrib.auth import login, authenticate, logout, update_session_auth_hash
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView, LogoutView
-from django.views.generic import TemplateView, UpdateView, CreateView, DetailView, ListView
+from django.views.generic import (TemplateView, UpdateView, CreateView,
+                                  DetailView, ListView, FormView)
 from django.shortcuts import get_object_or_404
 from django.contrib import messages
 from django.core.mail import send_mail
 from django.shortcuts import redirect
-from .models import CustomUser
-from .forms import RegisterForm, UpdateProfileForm
+from .models import CustomUser, Review
+from .forms import RegisterForm, UpdateProfileForm, ReviewForm
 from .utils import generate_random_password
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.http import HttpResponseForbidden
-
 
 
 class CustomLoginView(LoginView):
@@ -38,30 +38,46 @@ class CustomLoginView(LoginView):
         return super().form_invalid(form)
 
 
-class UserProfileView(LoginRequiredMixin, DetailView):
+class UserProfileView(LoginRequiredMixin, DetailView, FormView):
     """
-    Просмотр профиля пользователя.
+    Просмотр профиля пользователя с отображением отзывов и формой для добавления отзыва.
     """
     model = CustomUser
     template_name = 'users/user_profile.html'
     context_object_name = 'user'
+    form_class = ReviewForm
 
     def get_object(self, queryset=None):
         """
-        Проверяем, что пользователь просматривает свой профиль.
+        Получение профиля пользователя.
         """
-        username = self.kwargs.get('username')
-        if self.request.user.username != username:
-            return get_object_or_404(CustomUser, username=self.request.user.username)
-        return get_object_or_404(CustomUser, username=username)
+        return get_object_or_404(CustomUser, username=self.kwargs['username'])
 
     def get_context_data(self, **kwargs):
         """
-        Добавляем в контекст флаг, чтобы различать свой профиль и чужой.
+        Добавляем отзывы и форму в контекст.
         """
         context = super().get_context_data(**kwargs)
-        context['is_own_profile'] = self.object == self.request.user
+        context['reviews'] = Review.objects.filter(user=self.object)  # Отзывы для текущего пользователя
+        context['review_form'] = self.get_form()
+        context['is_own_profile'] = self.object == self.request.user  # Проверка на владельца профиля
         return context
+
+    def form_valid(self, form):
+        """
+        Обработка формы добавления отзыва.
+        """
+        form.instance.author = self.request.user
+        form.instance.user = self.get_object()
+        form.save()
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        """
+        Перенаправление на профиль после добавления отзыва.
+        """
+        user = self.get_object()
+        return reverse('users:user_profile', kwargs={'username': user.username})
 
 
 class RegisterView(CreateView):
@@ -218,3 +234,40 @@ class ManageUsersView(AdminRequiredMixin, ListView):
         Исключаем администраторов из списка пользователей.
         """
         return CustomUser.objects.exclude(role='admin')
+
+class UserListView(ListView):
+    """
+    Список всех пользователей.
+    """
+    model = CustomUser
+    template_name = 'users/user_list.html'
+    context_object_name = 'users'
+    paginate_by = 10  # Количество пользователей на странице (опционально)
+
+class ReviewListView(ListView):
+    """
+    Список отзывов для пользователя.
+    """
+    model = Review
+    template_name = 'users/review_list.html'
+    context_object_name = 'reviews'
+
+    def get_queryset(self):
+        user = get_object_or_404(CustomUser, username=self.kwargs['username'])
+        return Review.objects.filter(user=user)
+
+class ReviewCreateView(CreateView):
+    """
+    Создание нового отзыва.
+    """
+    model = Review
+    form_class = ReviewForm
+    template_name = 'users/review_form.html'
+
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        form.instance.user = get_object_or_404(CustomUser, username=self.kwargs['username'])
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return self.object.user.get_absolute_url()
