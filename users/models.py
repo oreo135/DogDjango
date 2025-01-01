@@ -1,8 +1,9 @@
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth import get_user_model
+from django.utils.text import slugify
 from django.db import models
 from django.urls import reverse
-
+import uuid
 
 class CustomUser(AbstractUser):
     """
@@ -74,6 +75,16 @@ class Review(models.Model):
     text = models.TextField(verbose_name='Текст отзыва')
     rating = models.PositiveIntegerField(verbose_name='Рейтинг', default=5)
     created_at = models.DateTimeField(auto_now_add=True)
+    slug = models.SlugField(unique=True, blank=True, verbose_name='Ссылка')
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(f"{self.author.username}-{uuid.uuid4().hex[:6]}")
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Отзыв от {self.author.username} для {self.user.username}"
+
+    class Meta:
+        verbose_name = 'Отзыв'
+        verbose_name_plural = 'Отзывы'

@@ -244,30 +244,53 @@ class UserListView(ListView):
     context_object_name = 'users'
     paginate_by = 10  # Количество пользователей на странице (опционально)
 
+
 class ReviewListView(ListView):
     """
-    Список отзывов для пользователя.
+    Список отзывов для пользователя с пагинацией.
     """
     model = Review
     template_name = 'users/review_list.html'
     context_object_name = 'reviews'
+    paginate_by = 5  # Пагинация: 5 отзывов на странице
 
     def get_queryset(self):
+        # Фильтруем отзывы для конкретного пользователя
         user = get_object_or_404(CustomUser, username=self.kwargs['username'])
         return Review.objects.filter(user=user)
 
+    def get_context_data(self, **kwargs):
+        # Добавляем информацию о пользователе, для которого показываются отзывы
+        context = super().get_context_data(**kwargs)
+        context['reviewed_user'] = get_object_or_404(CustomUser, username=self.kwargs['username'])
+        return context
+
+
 class ReviewCreateView(CreateView):
     """
-    Создание нового отзыва.
+    Создание нового отзыва для пользователя.
     """
     model = Review
     form_class = ReviewForm
     template_name = 'users/review_form.html'
 
     def form_valid(self, form):
+        # Устанавливаем автора отзыва и пользователя, к которому относится отзыв
         form.instance.author = self.request.user
         form.instance.user = get_object_or_404(CustomUser, username=self.kwargs['username'])
         return super().form_valid(form)
 
     def get_success_url(self):
-        return self.object.user.get_absolute_url()
+        # Перенаправляем обратно на страницу отзывов пользователя
+        return f"/users/{self.kwargs['username']}/reviews/"
+
+
+class ReviewDetailView(DetailView):
+    """
+    Детали отзыва.
+    """
+    model = Review
+    template_name = 'users/review_detail.html'
+    context_object_name = 'review'
+    slug_field = 'slug'
+    slug_url_kwarg = 'slug'
