@@ -4,7 +4,9 @@ from .views import (DogListView,
                     DogCreateView,
                     DogUpdateView,
                     DogDeleteView,
-                    test_cache_view)
+                    test_cache_view,
+                    DogSearchListView,
+                    BreedSearchListView,)
 
 app_name = 'dogs'
 
@@ -15,4 +17,6 @@ urlpatterns = [
     path('<int:pk>/update/', DogUpdateView.as_view(), name='update_dog'),  # Редактирование собаки
     path('<int:pk>/delete/', DogDeleteView.as_view(), name='delete_dog'),  # Удаление собаки
     path('test-cache/', test_cache_view, name='test_cache'),  # URL для тестирования Redis
+    path('search/dogs/', DogSearchListView.as_view(), name='dog_search'),
+    path('search/breeds/', BreedSearchListView.as_view(), name='breed_search'),
 ]

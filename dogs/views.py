@@ -2,7 +2,7 @@ from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.contrib import messages
 from django.db.models import F
-from .models import Dog, Pedigree
+from .models import Dog, Pedigree, Breed
 from .forms import DogForm, get_pedigree_formset
 from django.core.cache import cache
 from django.http import HttpResponse
@@ -209,6 +209,29 @@ class DogDeleteView(DeleteView):
         """
         messages.success(self.request, 'Собака успешно удалена.')
         return super().post(request, *args, **kwargs)
+
+
+class DogSearchListView(ListView):
+    model = Dog
+    template_name = 'dogs/dog_search.html'
+    context_object_name = 'dogs'
+
+    def get_queryset(self):
+        query = self.request.GET.get('q')
+        if query:
+            return Dog.objects.filter(Q(name__icontains=query) | Q(breed__name__icontains=query))
+        return Dog.objects.all()
+
+class BreedSearchListView(ListView):
+    model = Breed
+    template_name = 'dogs/breed_search.html'
+    context_object_name = 'breeds'
+
+    def get_queryset(self):
+        query = self.request.GET.get('q')
+        if query:
+            return Breed.objects.filter(name__icontains=query)
+        return Breed.objects.all()
 
 def test_cache_view(request):
     cache.set('test_key', 'Hello, Redis!', timeout=30)  # Сохраняем данные на 30 секунд
